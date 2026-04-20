@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Todo App</title>
+</head>
+<body>
+
+<h2>Signup</h2>
+<input id="signupEmail" placeholder="Email">
+<input id="signupPassword" placeholder="Password">
+<button onclick="signup()">Register</button>
+
+<h2>Login</h2>
+<input id="loginEmail" placeholder="Email">
+<input id="loginPassword" placeholder="Password">
+<button onclick="login()">Login</button>
+
+<p id="message"></p>
+
+<hr>
+
+<h2>Task Manager</h2>
+<input id="taskInput" placeholder="Enter task">
+<button onclick="addTask()">Add Task</button>
+
+<ul id="taskList"></ul>
+
+<script>
+let token = "";
+
+// ================= SIGNUP =================
+function signup() {
+    fetch('http://localhost:5000/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            email: signupEmail.value,
+            password: signupPassword.value
+        })
+    })
+    .then(res => res.text())
+    .then(data => {
+        message.innerText = data;
+    });
+}
+
+// ================= LOGIN =================
+function login() {
+    fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            email: loginEmail.value,
+            password: loginPassword.value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        token = data.token;   // SAVE TOKEN
+        message.innerText = data.message;
+        loadTasks();
+    });
+}
+
+// ================= ADD TASK =================
+function addTask() {
+    const task = document.getElementById('taskInput').value;
+
+    fetch('http://localhost:5000/api/add-task', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token
+        },
+        body: JSON.stringify({ task })
+    })
+    .then(() => loadTasks());
+}
+
+// ================= LOAD TASKS =================
+function loadTasks() {
+    fetch('http://localhost:5000/api/tasks', {
+        headers: {
+            'Authorization': token
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        const list = document.getElementById('taskList');
+        list.innerHTML = "";
+
+        data.forEach(item => {
+            const li = document.createElement("li");
+            li.innerText = item.task;
+
+            const btn = document.createElement("button");
+            btn.innerText = " Delete";
+            btn.onclick = () => deleteTask(item.task);
+
+            li.appendChild(btn);
+            list.appendChild(li);
+        });
+    });
+}
+
+// ================= DELETE TASK =================
+function deleteTask(task) {
+    fetch('http://localhost:5000/api/delete-task', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token
+        },
+        body: JSON.stringify({ task })
+    })
+    .then(() => loadTasks());
+}
+</script>
+
+</body>
+</html>
